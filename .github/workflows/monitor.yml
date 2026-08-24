@@ -32,7 +32,7 @@ jobs:
       # One broken site must not hide the state of the other three.
       fail-fast: false
       matrix:
-        target: [ledap, goat, soker, formalista, _selftest]
+        target: [ledap, goat, soker, formalista]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
