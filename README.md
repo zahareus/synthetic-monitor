@@ -50,7 +50,7 @@ must be derived from live content instead of a hardcoded URL that will rot).
 - The repo is public so Actions minutes are free. Three of the four project repos are
   private, where an hourly monitor would blow the 2000 min/mo allowance and choke every
   other workflow in them.
-- Only `TELEGRAM_BOT_TOKEN` (Самаритянин) is a secret. GOAT's Supabase publishable key is
+- Only `TELEGRAM_BOT_TOKEN` (@ksu_bot) is a secret. GOAT's Supabase publishable key is
   read from the deployed `app.js` — it is public by design, and reading it live means the
   check survives a key rotation and proves `app.js` deployed.
 - Not covered here, deliberately: Telegram bots, Workers without a UI, and n8n workflows.

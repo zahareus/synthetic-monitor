@@ -3,7 +3,7 @@ name: Synthetic Monitor
 # Opens every key page of each live site in a real browser once an hour and checks it
 # actually works — main content rendered, no error sentinel, no critical console error —
 # plus direct data-layer checks where the UI alone proves nothing. On ANY failure it sends
-# a Telegram alert (Самаритянин) and the run goes red. All-green = silent.
+# a Telegram alert (@ksu_bot) and the run goes red. All-green = silent.
 #
 # This repo is PUBLIC on purpose: Actions minutes are free and unmetered for public repos.
 # Running the same hourly monitor inside the private project repos would burn ~4300 min/mo

@@ -11,7 +11,7 @@
  * a predicate. For sites whose UI is auth-gated (GOAT outside Telegram) the data layer
  * is the ONLY thing worth checking; the page alone proves nothing.
  *
- * On ANY failure: ONE Telegram alert (Самаритянин bot) + non-zero exit so the Actions
+ * On ANY failure: ONE Telegram alert (@ksu_bot) + non-zero exit so the Actions
  * run goes red too. All-green = silent.
  *
  * Usage:  node monitor.mjs <target>        # target = file name in targets/
