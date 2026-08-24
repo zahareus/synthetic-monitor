@@ -47,9 +47,13 @@ must be derived from live content instead of a hardcoded URL that will rot).
 
 ## Notes
 
-- The repo is public so Actions minutes are free. Three of the four project repos are
-  private, where an hourly monitor would blow the 2000 min/mo allowance and choke every
-  other workflow in them.
+- The repo is public so Actions minutes are free and unmetered. Three of the four project
+  repos are private, where an hourly monitor would blow the 2000 min/mo allowance and choke
+  every other workflow in them.
+- 🔴 The catch of being public: GitHub disables scheduled workflows after 60 days with no
+  repository activity. Long silent stretches are this repo's normal state, so `keepalive.yml`
+  pushes one empty commit a month to reset that clock.
+- The hourly run is at :17, not :00 — GitHub delays cron at the top of the hour under load.
 - Only `TELEGRAM_BOT_TOKEN` (@ksu_bot) is a secret. GOAT's Supabase publishable key is
   read from the deployed `app.js` — it is public by design, and reading it live means the
   check survives a key rotation and proves `app.js` deployed.

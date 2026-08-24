@@ -9,10 +9,14 @@ name: Synthetic Monitor
 # Running the same hourly monitor inside the private project repos would burn ~4300 min/mo
 # against a 2000 min free allowance and silently choke every other workflow there.
 # Nothing secret lives here — only public URLs and CSS selectors.
+#
+# 🔴 The trade-off: GitHub disables scheduled workflows in a PUBLIC repo after 60 days with no
+# repository activity. That is why keepalive.yml exists — without it this monitor dies quietly
+# two months after the last commit, which is the exact failure it is supposed to prevent.
 
 on:
   schedule:
-    - cron: '0 * * * *'   # hourly
+    - cron: '17 * * * *'   # hourly, off the top of the hour (GitHub delays cron at :00 under load)
   push:
     branches: [main]
     paths:
