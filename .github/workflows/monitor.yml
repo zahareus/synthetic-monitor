@@ -1,0 +1,61 @@
+name: Synthetic Monitor
+
+# Opens every key page of each live site in a real browser once an hour and checks it
+# actually works — main content rendered, no error sentinel, no critical console error —
+# plus direct data-layer checks where the UI alone proves nothing. On ANY failure it sends
+# a Telegram alert (Самаритянин) and the run goes red. All-green = silent.
+#
+# This repo is PUBLIC on purpose: Actions minutes are free and unmetered for public repos.
+# Running the same hourly monitor inside the private project repos would burn ~4300 min/mo
+# against a 2000 min free allowance and silently choke every other workflow there.
+# Nothing secret lives here — only public URLs and CSS selectors.
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # hourly
+  push:
+    branches: [main]
+    paths:
+      - 'monitor.mjs'
+      - 'targets/**'
+      - '.github/workflows/monitor.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: synthetic-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    strategy:
+      # One broken site must not hide the state of the other three.
+      fail-fast: false
+      matrix:
+        target: [ledap, goat, soker, formalista]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run synthetic monitor
+        id: monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: '292048'
+        run: node monitor.mjs ${{ matrix.target }}
+      # The monitor alerts for itself, including when it crashes. This covers the gap it
+      # cannot: a failure BEFORE it ever runs (checkout, node setup, chromium download,
+      # Actions quota). Without it those failures are a red run nobody looks at.
+      - name: Alert if the monitor could not even start
+        if: failure() && steps.monitor.outcome != 'failure'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id=292048 \
+            -d parse_mode=HTML \
+            -d text="🚨 <b>Synthetic monitor failed to start</b> (${{ matrix.target }})%0AThe job died before the checks ran — see the Actions run." \
+            > /dev/null

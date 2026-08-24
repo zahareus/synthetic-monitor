@@ -1,0 +1,14 @@
+{
+  "name": "synthetic-monitor",
+  "version": "1.0.0",
+  "main": "monitor.mjs",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Hourly synthetic monitoring for live sites",
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
