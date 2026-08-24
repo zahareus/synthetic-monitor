@@ -160,6 +160,53 @@ async function sendTelegram(text) {
     }
 }
 
+// Every run leaves a readable trace, green ones included. A monitor whose only output is
+// silence cannot be reviewed later: there is no way to tell "nothing broke" from "it never
+// ran". The GitHub step summary is free, needs no storage, and is kept with the run.
+async function writeLog(target, results) {
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+    const broken = results.filter((r) => !r.ok);
+    const flaky = results.filter((r) => r.flaked);
+    const stamp = new Date().toISOString();
+
+    // Machine-readable one-liner, so the log can be grepped out of a raw run log later.
+    console.log(`MONITOR_RESULT ${JSON.stringify({
+        target: target.label,
+        at: stamp,
+        checks: results.length,
+        failed: broken.length,
+        flaked: flaky.length,
+        ms: results.reduce((a, r) => a + (r.ms || 0), 0),
+        failures: broken.map((b) => ({ name: b.name, why: b.failures })),
+        flakes: flaky.map((f) => ({ name: f.name, why: f.flakedFrom }))
+    })}`);
+
+    if (!summaryPath) return;
+    const verdict = broken.length ? `❌ ${broken.length}/${results.length} failing`
+        : flaky.length ? `⚠️ all passed, ${flaky.length} needed a retry`
+            : `✅ all ${results.length} passed`;
+    const rows = results.map((r) => {
+        const state = r.ok ? (r.flaked ? '⚠️ retry' : '✅ ok') : '❌ fail';
+        const detail = r.ok ? (r.flaked ? r.flakedFrom.join('; ') : '') : r.failures.join('; ');
+        return `| ${r.name} | ${state} | ${r.ms} ms | ${detail.replace(/\|/g, '\\|').slice(0, 160)} |`;
+    });
+    const md = [
+        `## ${target.label} — ${verdict}`,
+        `\`${stamp}\` · ${target.baseUrl}`,
+        '',
+        '| Check | Result | Time | Detail |',
+        '|---|---|---|---|',
+        ...rows,
+        ''
+    ].join('\n');
+    try {
+        const { appendFile } = await import('node:fs/promises');
+        await appendFile(summaryPath, md);
+    } catch (e) {
+        console.error('could not write step summary:', e.message);
+    }
+}
+
 export function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -181,17 +228,30 @@ if (!targetName) {
     const browser = await chromium.launch();
     const results = [];
     for (const check of checks) {
-        let failures = await runCheck(browser, check);
+        const startedAt = Date.now();
+        let r = await runCheck(browser, check);
         // Retry once before declaring breakage — kills transient network/CDN blips so we
         // don't cry wolf, while still catching anything that actually stays broken.
-        if (!failures.ok) {
+        let flaked = false;
+        if (!r.ok) {
+            const firstFailure = r.failures;
             await new Promise((res) => setTimeout(res, 2500));
-            failures = await runCheck(browser, check);
+            r = await runCheck(browser, check);
+            // Failed, then passed on retry. Nobody is paged for this — but it is the early
+            // warning that a check is unstable, so it has to end up in the log rather than
+            // vanish. A check that flakes often is either a real intermittent bug or a badly
+            // chosen selector; both need to be visible before they erode trust in the monitor.
+            if (r.ok) { flaked = true; r.flakedFrom = firstFailure; }
         }
-        results.push(failures);
-        console.log(`${failures.ok ? '✅' : '❌'} ${failures.name}${failures.ok ? '' : ' — ' + failures.failures.join('; ')}`);
+        r.ms = Date.now() - startedAt;
+        r.flaked = flaked;
+        results.push(r);
+        const flag = r.ok ? (flaked ? '⚠️ ' : '✅') : '❌';
+        const note = flaked ? ` — passed on retry (first attempt: ${r.flakedFrom.join('; ')})` : '';
+        console.log(`${flag} ${r.name}${r.ok ? '' : ' — ' + r.failures.join('; ')}${note} [${r.ms}ms]`);
     }
     await browser.close();
+    await writeLog(target, results);
 
     const broken = results.filter((r) => !r.ok);
     if (broken.length === 0) {

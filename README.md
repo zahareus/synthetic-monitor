@@ -45,6 +45,22 @@ must be derived from live content instead of a hardcoded URL that will rot).
 - `allowAccessDenied: true` — "Access Denied" is legitimate here (admin pages).
 - `type: 'json'` with `must(data)` — direct fetch; return a failure string or `null`.
 
+## Logging and reviewing quality
+
+Every run — green ones included — writes a per-check table (result, duration, detail) to the
+GitHub run summary, and prints one `MONITOR_RESULT {...}` JSON line into the raw log. A check
+that fails and then passes on the retry is recorded as a **flake** (`⚠️ retry`): nobody is
+alerted, but it is the early warning that a check is unstable.
+
+To review how well the monitor itself is doing:
+
+```bash
+node report.mjs 30      # coverage gaps, failures per target, duration trend. Needs `gh`.
+```
+
+Coverage gaps are the point of that report: silence from a monitor that stopped running looks
+exactly like silence from a healthy site.
+
 ## Notes
 
 - The repo is public so Actions minutes are free and unmetered. Three of the four project
