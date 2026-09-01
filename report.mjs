@@ -81,7 +81,7 @@ for (const r of failedRuns) {
         (perTarget[t] ||= []).push({ at: r.run_started_at.slice(0, 16), url: j.html_url });
     }
 }
-const targets = ['ledap', 'goat', 'soker', 'formalista'];
+const targets = ['ledap', 'soker', 'formalista'];
 for (const t of targets) {
     const f = perTarget[t] || [];
     const rate = done.length ? ((1 - f.length / done.length) * 100).toFixed(1) : '—';

@@ -12,9 +12,12 @@ went down and four pages served 200 with no content. An uptime ping saw nothing 
 | Target | Site | What actually proves it is alive |
 |---|---|---|
 | `ledap` | ledap.win | Countdown renders; `/health` shows a cron event newer than 6h (dead-man on the scheduler) |
-| `goat` | goatapp.club | Landing renders; Supabase `gw_config` / `fixtures` / `players` return rows |
 | `soker` | soker.win | `#lobby` renders after game.js boots; `/api/health` ok |
 | `formalista` | formalista.org | `#quote` and `#attr` are non-empty (they ship empty); `cards.json` has 100+ cards; a real article page from that feed renders |
+
+Not monitored: `goat` (goatapp.club) — the project is frozen since 01.09.2026, so a dead
+Supabase and a Coming Soon landing are the expected state, not an incident. Re-add the target
+to the matrix in `.github/workflows/monitor.yml` if the project is ever unfrozen.
 
 ## Running one locally
 
