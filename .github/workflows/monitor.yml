@@ -16,7 +16,13 @@ name: Synthetic Monitor
 
 on:
   schedule:
-    - cron: '17 * * * *'   # hourly, off the top of the hour (GitHub delays cron at :00 under load)
+    # 🔴 Not hourly any more. Measured 24.08-04.09: 91 scheduled runs where 261 were due — GitHub
+    # silently skips most cron ticks, leaving gaps up to 11.6h of blind time. GitHub does not
+    # promise to run a schedule, only to try. Asking 4× as often makes the SKIPS the exception
+    # instead of the rule; minutes are free here (public repo), so the only cost is noise in the
+    # run list. This does NOT make the schedule reliable — see the external dead-man watchdog
+    # (n8n) that shouts when no successful run has landed for 3h. Both are needed.
+    - cron: '17,32,47,2 * * * *'
   push:
     branches: [main]
     paths:
