@@ -35,7 +35,10 @@ const runs = gh([
     '--jq', '[.workflow_runs[] | {id, status, conclusion, created_at, run_started_at, updated_at}]'
 ].flat()).flat?.() ?? [];
 
-const done = runs.filter((r) => r.status === 'completed')
+// 🔴 Скасовані рани — не прогони. Concurrency-група тримає один pending, і кожен новий
+// запуск скасовує попередній; рахувати їх як покриття означало б звітувати про перевірки,
+// яких не було.
+const done = runs.filter((r) => r.status === 'completed' && r.conclusion !== 'cancelled')
     .sort((a, b) => new Date(a.run_started_at) - new Date(b.run_started_at));
 
 if (!done.length) {
@@ -50,7 +53,7 @@ const expected = Math.floor(hoursCovered / (EXPECTED_GAP_MIN / 60)) + 1;
 
 console.log(`\n📊 Synthetic monitor — quality report (last ${DAYS} days)`);
 console.log(`   window : ${first.toISOString().slice(0, 16)} → ${last.toISOString().slice(0, 16)}`);
-console.log(`   runs   : ${done.length} completed, ~${expected} expected at hourly cadence`);
+console.log(`   runs   : ${done.length} completed, ~${expected} expected at the ${EXPECTED_GAP_MIN}-min cadence this report assumes`);
 
 // ── Coverage gaps ────────────────────────────────────────────────────────────
 const gaps = [];
