@@ -37,7 +37,7 @@ concurrency:
 
 jobs:
   monitor:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # ponytail: ubuntu-latest=26.04 since 19.10.2026, Playwright 1.59 has no chromium for it; bump when Playwright supports 26.04
     strategy:
       # One broken site must not hide the state of the other three.
       fail-fast: false
